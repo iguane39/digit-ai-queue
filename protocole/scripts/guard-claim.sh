@@ -39,12 +39,15 @@ esac
 
 file_path="$(extraire file_path)"
 
-# 1) Interdit : éditer un ticket encore dans a-faire/ (il faut le claim d'abord).
+# 1) Interdit : éditer un ticket EXISTANT encore dans a-faire/ (le claim d'abord).
+#    Créer un nouveau ticket (le fichier n'existe pas encore) reste autorisé.
 case "$file_path" in
   *"/tickets/a-faire/"*|*"\\tickets\\a-faire\\"*)
-    echo "GUARD: édition d'un ticket non réclamé ($file_path)." >&2
-    echo "Claim d'abord : git mv vers tickets/en-cours/ puis commit 'claim: <id> par <agent>'." >&2
-    exit 2
+    if [ -e "$file_path" ]; then
+      echo "GUARD: édition d'un ticket non réclamé ($file_path)." >&2
+      echo "Claim d'abord : git mv vers tickets/en-cours/ puis commit 'claim: <id> par <agent>'." >&2
+      exit 2
+    fi
     ;;
 esac
 

@@ -1,0 +1,15 @@
+# Verrous d'instance (créés hors repo en principe ; filet de sécurité)
+*.lock
+
+# Journaux des watchers (Phase 6)
+*.log
+logs/
+
+# Secrets locaux éventuels (le canal de notification peut porter un token) :
+# ne jamais committer. config.env reste committé (valeurs non secrètes).
+local/secrets.env
+
+# Fichiers OS
+.DS_Store
+Thumbs.db
+desktop.ini

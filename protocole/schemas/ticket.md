@@ -71,3 +71,22 @@ champ hors de cet ensemble (frugalité).
 | `assigne` | Qui doit le traiter ? |
 | `statut` | Où en est-il ? (rappel — le dossier fait foi) |
 | `limites` | Qu'est-ce que l'agent ne doit surtout pas toucher ? |
+
+## Test de suffisance — checklist avant de créer un ticket
+
+Un ticket doit être traitable par l'agent **le plus pauvre en contexte**, qui
+ne connaît ni ton organisation, ni tes conventions, ni tes projets. Avant de
+déposer le ticket, coche mentalement :
+
+- [ ] Le `resultat` est **testable** : on peut vérifier objectivement s'il est
+      atteint, sans redemander à l'agent.
+- [ ] Toute convention, tout format, tout critère non évident est **inliné**
+      dans le corps du ticket **ou pointé** par un chemin/lien dans `sources`.
+      Rien n'est supposé connu.
+- [ ] Les `sources` suffisent : un agent parti de zéro retrouve tout à partir
+      d'elles.
+- [ ] Les `limites` disent explicitement ce qu'il ne faut pas toucher.
+- [ ] Où déposer le reçu est indiqué (`recus/<id>-recu.md`).
+
+Si une seule case ne peut être cochée, le ticket n'est pas suffisant : complète-le.
+Un ticket insuffisant finira en `attente-input/` et coûtera un aller-retour.

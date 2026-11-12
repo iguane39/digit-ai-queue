@@ -37,12 +37,16 @@ case "$tool_name" in
   *) exit 0 ;;
 esac
 
-file_path="$(extraire file_path)"
+file_path="$(extraire file_path || true)"
+# Un chemin Windows arrive échappé en JSON (`C:\\dev\\…`) : on ramène tout
+# séparateur, simple ou doublé, à `/` avant de comparer. Sans cela, l'édition
+# d'un ticket non réclamé passait sous Windows (constaté le 12/11/2026).
+file_path="$(printf '%s' "$file_path" | tr '\\' '/' | tr -s '/')"
 
 # 1) Interdit : éditer un ticket EXISTANT encore dans a-faire/ (le claim d'abord).
 #    Créer un nouveau ticket (le fichier n'existe pas encore) reste autorisé.
 case "$file_path" in
-  *"/tickets/a-faire/"*|*"\\tickets\\a-faire\\"*)
+  *"/tickets/a-faire/"*)
     if [ -e "$file_path" ]; then
       echo "GUARD: édition d'un ticket non réclamé ($file_path)." >&2
       echo "Claim d'abord : git mv vers tickets/en-cours/ puis commit 'claim: <id> par <agent>'." >&2

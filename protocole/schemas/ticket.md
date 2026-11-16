@@ -55,11 +55,37 @@ conventions ; où déposer le reçu)
 
 ## Champs optionnels tolérés
 
-`priorite`, `echeance`, `parent`. **Aucun autre** — le validateur rejette tout
-champ hors de cet ensemble (frugalité).
+`priorite`, `echeance`, `parent`, plus les trois champs d'un livrable d'images
+générées (ci-dessous). **Aucun autre** — le validateur rejette tout champ hors
+de cet ensemble (frugalité).
 
 - `parent` : `id` du ticket dont celui-ci découle. Sert à mesurer la profondeur
   des chaînes créées par les agents (garde-fou anti-boucle).
+
+## Livrable d'images générées : les données et la commande de rendu
+
+Quand le résultat attendu est un lot d'images produites par un générateur
+(carrousels, vignettes, schémas rendus), l'image seule ne se corrige pas : pour
+changer un texte, il faudrait le recopier depuis l'image. Le ticket déclare donc
+d'où viennent les images, et le validateur refuse un ticket d'images sans ces
+trois champs :
+
+```yaml
+livrable: images-generees
+donnees: carrousels/diapositives.json
+# Le fichier qui porte le contenu des images (textes, valeurs, ordre) : celui
+# qu'on édite pour corriger une image. Chemin dans le dépôt, non vide.
+rendu: node scripts/rendre.mjs carrousels/diapositives.json
+# La commande qui rend les images à partir des données. Non vide ; une commande
+# qui contient « : » s'écrit en bloc (`rendu: |` puis la commande indentée).
+```
+
+- `livrable` : seule valeur admise, `images-generees`. Une autre valeur (faute
+  de frappe comprise) est refusée, jamais ignorée.
+- `donnees` et `rendu` n'existent que sous `livrable: images-generees`.
+- L'agent qui livre cite ces deux éléments dans les `preuves` de son reçu
+  (voir [`recu.md`](recu.md)), et la relecture rejoue la commande de rendu sur
+  le fichier de données.
 
 ## Les 6 champs obligatoires en un coup d'œil
 
@@ -87,6 +113,8 @@ déposer le ticket, coche mentalement :
       d'elles.
 - [ ] Les `limites` disent explicitement ce qu'il ne faut pas toucher.
 - [ ] Où déposer le reçu est indiqué (`recus/<id>-recu.md`).
+- [ ] Si le résultat est un lot d'images générées : `livrable`, `donnees` et
+      `rendu` sont renseignés (section ci-dessus).
 
 Si une seule case ne peut être cochée, le ticket n'est pas suffisant : complète-le.
 Un ticket insuffisant finira en `attente-input/` et coûtera un aller-retour.

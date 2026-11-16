@@ -123,8 +123,10 @@ QUEUE_ASSIGNEES="<liste des agents autorisés>" \
 ```
 
 Le validateur vérifie la présence des 6 champs obligatoires, l'absence de champ
-hors de l'ensemble autorisé, un `resultat` non vide, et l'appartenance de
-`assigne` à l'énumération fournie. L'énumération des agents n'est **pas** codée
+hors de l'ensemble autorisé, un `resultat` non vide, l'appartenance de
+`assigne` à l'énumération fournie, et, pour un ticket de livrable d'images
+générées (`livrable: images-generees`), un fichier de données (`donnees`) et une
+commande de rendu (`rendu`) non vides. L'énumération des agents n'est **pas** codée
 dans ce dossier générique : elle est passée par la variable d'environnement
 `QUEUE_ASSIGNEES` (renseignée par la couche locale). Sans elle, seule la
 présence de `assigne` est vérifiée — le protocole reste utilisable seul.

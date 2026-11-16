@@ -53,7 +53,9 @@ git commit -m "attente-input: <id> — <résumé de la question>"
 Quand le résultat est atteint :
 1. Dépose un **reçu conforme** dans `recus/<id>-recu.md` (6 champs, voir
    `schemas/recu.md`). Les `preuves` doivent démontrer le `resultat` du ticket,
-   de façon vérifiable par un tiers.
+   de façon vérifiable par un tiers. Si le ticket porte
+   `livrable: images-generees`, les `preuves` citent son fichier de données
+   (`donnees`) et sa commande de rendu (`rendu`) : la relecture les rejoue.
 2. Déplace le ticket en `termine/` et committe :
 
 ```

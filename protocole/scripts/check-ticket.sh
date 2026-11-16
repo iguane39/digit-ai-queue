@@ -9,7 +9,13 @@
 #   - les 6 champs obligatoires sont présents :
 #       id, resultat, sources, assigne, statut, limites
 #   - aucun champ hors de l'ensemble autorisé
-#       (6 obligatoires + 3 optionnels : priorite, echeance, parent)
+#       (6 obligatoires + 3 optionnels : priorite, echeance, parent
+#        + 3 conditionnels au livrable : livrable, donnees, rendu)
+#   - un livrable d'images générées (`livrable: images-generees`) déclare son
+#     fichier de données (`donnees`) et sa commande de rendu (`rendu`), non
+#     vides : sans eux, le reçu ne peut pas les citer en preuve ni la
+#     relecture les rejouer. `donnees` et `rendu` n'existent que sous ce
+#     livrable ; toute autre valeur de `livrable` est refusée.
 #   - `resultat` est non vide (definition of done testable)
 #   - `assigne` appartient à l'énumération fournie via la variable
 #     d'environnement QUEUE_ASSIGNEES (liste séparée par des espaces).
@@ -22,7 +28,7 @@ fichier="${1:-}"
 [ -f "$fichier" ] || { echo "ERREUR: fichier introuvable: $fichier" >&2; exit 2; }
 
 obligatoires="id resultat sources assigne statut limites"
-optionnels="priorite echeance parent"
+optionnels="priorite echeance parent livrable donnees rendu"
 autorises="$obligatoires $optionnels"
 
 # --- Extraire le frontmatter (entre les deux premiers ---) ---
@@ -75,6 +81,43 @@ if [ "$val_resultat" = ">" ] || [ "$val_resultat" = "|" ] || [ -z "${val_resulta
     echo "REJET: champ resultat vide (definition of done requise)" >&2
     erreurs=1
   fi
+fi
+
+# 3 bis) livrable d'images générées : données et commande de rendu requises.
+#        champ_renseigne <nom> : vrai si la valeur (inline ou bloc indenté) est non vide.
+champ_renseigne() {
+  local v bloc
+  v="$(printf '%s\n' "$fm" | sed -n -E "s/^$1:[[:space:]]*(.*)$/\1/p" | head -n1)"
+  if printf '%s' "$v" | grep -qE '^[>|][-+]?[[:space:]]*$' || [ -z "${v//[[:space:]]/}" ]; then
+    bloc="$(printf '%s\n' "$fm" | awk -v c="$1" '
+      $0 ~ "^" c ":" { f=1; next }
+      f && /^[A-Za-z_][A-Za-z0-9_]*:/ { exit }
+      f && /[^[:space:]]/ { print }
+    ')"
+    [ -n "$bloc" ]
+  fi
+}
+
+if printf '%s\n' "$cles" | grep -qx livrable; then
+  val_livrable="$(printf '%s\n' "$fm" | sed -n -E 's/^livrable:[[:space:]]*([^[:space:]#]+).*$/\1/p' | head -n1 | tr -d "\"'")"
+  if [ "$val_livrable" = "images-generees" ]; then
+    for champ in donnees rendu; do
+      if ! printf '%s\n' "$cles" | grep -qx "$champ" || ! champ_renseigne "$champ"; then
+        echo "REJET: livrable images-generees : champ $champ manquant ou vide (le reçu doit le citer dans ses preuves)" >&2
+        erreurs=1
+      fi
+    done
+  else
+    echo "REJET: livrable inconnu: '$val_livrable' (valeur admise: images-generees)" >&2
+    erreurs=1
+  fi
+else
+  for champ in donnees rendu; do
+    if printf '%s\n' "$cles" | grep -qx "$champ"; then
+      echo "REJET: champ '$champ' sans livrable déclaré (ajouter 'livrable: images-generees', ou retirer le champ)" >&2
+      erreurs=1
+    fi
+  done
 fi
 
 # 4) assigne dans l'énumération (si fournie)

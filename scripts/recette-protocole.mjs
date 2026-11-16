@@ -7,7 +7,8 @@
  * l'arbre, sous le dossier temporaire du poste) et lit son code de sortie et sa raison.
  *
  * Usage :
- *   node scripts/recette-protocole.mjs        exit 0 si tous les cas tiennent, 1 sinon
+ *   node scripts/recette-protocole.mjs                    exit 0 si tous les cas tiennent, 1 sinon
+ *   node scripts/recette-protocole.mjs --groupe garde     un seul groupe : garde | validateur
  *
  * Aucun ticket réel de la file n'est lu ni modifié : les tickets des cas sont des fixtures écrites
  * dans les dépôts jetables.
@@ -87,6 +88,9 @@ function valider(racineTmp, texte, env = {}) {
   return { code: r.status, err: r.stderr || "", out: r.stdout || "" };
 }
 
+const groupe = process.argv.includes("--groupe") ? process.argv[process.argv.indexOf("--groupe") + 1] : null;
+const veut = (g) => !groupe || groupe === g;
+
 let ko = 0;
 let total = 0;
 function ok(nom, cond, detail = "") {
@@ -98,6 +102,7 @@ function ok(nom, cond, detail = "") {
 function recette() {
   const tmp = mkdtempSync(join(tmpdir(), "queue-recette-"));
   try {
+    if (veut("garde")) {
     // ---- Garde de claim : socle (non-régression) -------------------------------------------------
     {
       const d = depot(tmp);
@@ -171,6 +176,37 @@ function recette() {
       ok("TF-2647 : file en sous-dossier, l'auteur corrige son ticket non commité", r1.code === 0, r1.err);
       const r2 = garde({ queueDir: d.file, cible: join(d.file, TICKET_SUIVI) });
       ok("TF-2647 : file en sous-dossier, un ticket suivi reste gardé", r2.code === 2, r2.err);
+    }
+    }
+
+    // ---- TF-2639 : un livrable d'images générées porte ses données et sa commande de rendu --------
+    if (veut("validateur")) {
+      const ENV = { QUEUE_ASSIGNEES: "claude codex humain" };
+      const avec = (extra) => `---\nid: T-9999-0101-005\nresultat: x\nsources:\n  - y\nassigne: claude\nstatut: a-faire\nlimites: z\n${extra}---\n`;
+      const IMG = "livrable: images-generees\n";
+      const DON = "donnees: carrousels/diapositives.json\n";
+      const REN = "rendu: node scripts/rendre.mjs carrousels/diapositives.json\n";
+      ok("validateur : un ticket sans livrable déclaré reste conforme", valider(tmp, avec(""), ENV).code === 0);
+      const v1 = valider(tmp, avec(IMG + DON + REN), ENV);
+      ok("TF-2639 : un ticket d'images avec données et commande de rendu est conforme", v1.code === 0, v1.err);
+      const v2 = valider(tmp, avec(`livrable: "images-generees"\ndonnees: >\n  carrousels/diapositives.json\nrendu: |\n  node scripts/rendre.mjs carrousels/diapositives.json\n`), ENV);
+      ok("TF-2639 : données et rendu en bloc indenté, livrable entre guillemets, sont conformes", v2.code === 0, v2.err);
+      const v3 = valider(tmp, avec(IMG + REN), ENV);
+      ok("TF-2639 : un ticket d'images sans le fichier de données est refusé, pour cette raison", v3.code === 1 && /livrable images-generees.*donnees/.test(v3.err), v3.err);
+      const v4 = valider(tmp, avec(IMG + DON), ENV);
+      ok("TF-2639 : un ticket d'images sans la commande de rendu est refusé, pour cette raison", v4.code === 1 && /livrable images-generees.*rendu/.test(v4.err), v4.err);
+      const v5 = valider(tmp, avec(IMG), ENV);
+      ok("TF-2639 : un ticket d'images sans les deux est refusé, les deux manques sont dits", v5.code === 1 && /donnees/.test(v5.err) && /rendu/.test(v5.err) && /livrable images-generees/.test(v5.err), v5.err);
+      const v6 = valider(tmp, avec(IMG + "donnees:\n" + REN), ENV);
+      ok("TF-2639 : un champ donnees vide est refusé comme un champ absent", v6.code === 1 && /livrable images-generees.*donnees/.test(v6.err), v6.err);
+      const v7 = valider(tmp, avec(IMG + DON + "rendu: >\n"), ENV);
+      ok("TF-2639 : un champ rendu en bloc sans contenu est refusé comme un champ absent", v7.code === 1 && /livrable images-generees.*rendu/.test(v7.err), v7.err);
+      const v8 = valider(tmp, avec("livrable: images\n" + DON + REN), ENV);
+      ok("TF-2639 : une valeur de livrable inconnue (faute de frappe) est refusée, jamais ignorée", v8.code === 1 && /livrable inconnu/.test(v8.err), v8.err);
+      const v9 = valider(tmp, avec(DON + REN), ENV);
+      ok("TF-2639 : données et rendu sans livrable déclaré sont refusés (le marqueur ne s'oublie pas)", v9.code === 1 && /sans livrable/.test(v9.err), v9.err);
+      const v10 = valider(tmp, avec("image: x\n"), ENV);
+      ok("validateur : un champ hors de l'ensemble autorisé reste refusé", v10.code === 1 && /non autorisé/.test(v10.err), v10.err);
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true });

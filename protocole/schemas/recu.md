@@ -90,7 +90,10 @@ Un reçu est **conforme** si :
 1. Les 6 champs sont présents dans le frontmatter — même vides de contenu
    utile, ils sont renseignés (`aucun`, `"—"`).
 2. Chaque preuve est un fait vérifiable (commande rejouable, fichier
-   constatable, sortie citée), pas une affirmation.
+   constatable, sortie citée), pas une affirmation. Pour un ticket de
+   `livrable: images-generees`, les `preuves` citent le fichier de données et la
+   commande de rendu du ticket (ceux qui ont réellement produit les images), et
+   la relecture rejoue cette commande sur ces données.
 3. `arret` non vide implique `suite` non vide : un blocage sans piste de
    reprise n'est pas un reçu, c'est un abandon.
 4. Aucun champ hors des 6 (le corps libre sous le frontmatter est permis

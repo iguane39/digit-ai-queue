@@ -80,6 +80,10 @@ sont chargés au démarrage.
   1. édition d'un fichier situé dans `tickets/a-faire/` (claim d'abord) ;
   2. présence de changements non commités dans `tickets/` (un claim doit être
      commité avant tout travail — « claim = commit = lock »).
+- Il lit la cible de l'outil (`file_path`, ou `notebook_path` pour NotebookEdit) :
+  une écriture dont la cible est hors du dépôt qui porte la file (dossier
+  temporaire de session, autre projet) passe toujours, même quand un autre
+  agent laisse un ticket non commité dans `tickets/`.
 - Il ne garde que les outils de mutation de fichier. Les commandes shell
   (`git mv`, `git commit` du claim) et les lectures passent librement, sinon le
   claim lui-même serait impossible.

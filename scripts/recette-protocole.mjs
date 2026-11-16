@@ -144,6 +144,34 @@ function recette() {
       const r2 = garde({ queueDir: d.file, cible: dansProjet });
       ok("TF-2651 : file en sous-dossier, un livrable du projet reste refusé", r2.code === 2, r2.err);
     }
+
+    // ---- TF-2647 : l'auteur corrige son ticket pas encore commité --------------------------------
+    {
+      const d = depot(tmp);
+      const neuf = join(d.racine, "tickets/a-faire/T-9999-0101-003.md");
+      ecrire(neuf, CORPS_TICKET("T-9999-0101-003"));
+      const r1 = garde({ queueDir: d.racine, cible: neuf });
+      ok("TF-2647 : l'auteur corrige son ticket non commité, sans le supprimer", r1.code === 0, r1.err);
+      const r2 = garde({ queueDir: d.racine, cible: join(d.racine, "tickets/a-faire/T-9999-0101-004.md") });
+      ok("TF-2647 : créer un ticket neuf passe même quand un autre ticket neuf traîne non commité", r2.code === 0, r2.err);
+      const r3 = garde({ queueDir: d.racine, cible: join(d.racine, "livrable-existant.txt") });
+      ok("TF-2647 : le ticket non commité ne lève pas la garde des livrables du dépôt", r3.code === 2, r3.err);
+      const r4 = garde({ queueDir: d.racine, cible: join(d.racine, TICKET_SUIVI) });
+      ok("TF-2647 : un ticket que git connaît reste gardé, même avec un ticket neuf à côté", r4.code === 2 && /non réclamé/.test(r4.err), r4.err);
+      git(d.racine, "add", "--", "tickets/a-faire/T-9999-0101-003.md");
+      const r5 = garde({ queueDir: d.racine, cible: neuf });
+      ok("TF-2647 : un ticket entré à l'index (git add) est connu de git, donc gardé", r5.code === 2 && /non réclamé/.test(r5.err), r5.err);
+    }
+    {
+      // Disposition de l'installateur : le ticket neuf vit sous queue/.
+      const d = depot(tmp, "queue");
+      const neuf = join(d.file, "tickets/a-faire/T-9999-0101-003.md");
+      ecrire(neuf, CORPS_TICKET("T-9999-0101-003"));
+      const r1 = garde({ queueDir: d.file, cible: neuf });
+      ok("TF-2647 : file en sous-dossier, l'auteur corrige son ticket non commité", r1.code === 0, r1.err);
+      const r2 = garde({ queueDir: d.file, cible: join(d.file, TICKET_SUIVI) });
+      ok("TF-2647 : file en sous-dossier, un ticket suivi reste gardé", r2.code === 2, r2.err);
+    }
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

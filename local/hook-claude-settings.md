@@ -77,7 +77,9 @@ sont chargés au démarrage.
   `tickets/` — sinon il laisse tout passer (exit 0). Il est donc sans effet
   hors du contexte de la file.
 - Il **bloque** (exit 2, message renvoyé à l'agent) dans deux cas :
-  1. édition d'un fichier situé dans `tickets/a-faire/` (claim d'abord) ;
+  1. édition d'un ticket de `tickets/a-faire/` que git connaît déjà (claim
+     d'abord) ; un ticket que `git ls-files` ne connaît pas encore, écrit et
+     jamais commité, se crée et se corrige librement par son auteur ;
   2. présence de changements non commités dans `tickets/` (un claim doit être
      commité avant tout travail — « claim = commit = lock »).
 - Il lit la cible de l'outil (`file_path`, ou `notebook_path` pour NotebookEdit) :

@@ -74,9 +74,16 @@ case "$file_path" in
 esac
 
 # 1) Interdit : éditer un ticket EXISTANT encore dans a-faire/ (le claim d'abord).
-#    Créer un nouveau ticket (le fichier n'existe pas encore) reste autorisé.
+#    Créer un nouveau ticket (le fichier n'existe pas encore) reste autorisé, et
+#    corriger un ticket que git ne connaît pas encore (écrit, jamais commité)
+#    aussi : il n'a pas de claim à respecter, et le commit non fait d'un ticket
+#    neuf ne doit pas retenir son auteur (règle 2 ci-dessous).
 case "$file_path" in
   *"/tickets/a-faire/"*)
+    if git -C "$QUEUE_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+       && ! git -C "$QUEUE_DIR" ls-files --error-unmatch -- "$file_path" >/dev/null 2>&1; then
+      exit 0
+    fi
     if [ -e "$file_path" ]; then
       echo "GUARD: édition d'un ticket non réclamé ($file_path)." >&2
       echo "Claim d'abord : git mv vers tickets/en-cours/ puis commit 'claim: <id> par <agent>'." >&2
